@@ -6,8 +6,8 @@ It is built using Go, utilizing the [Gin](https://github.com/gin-gonic/gin) web 
 You can access the live instance of the Skyblock Maniacs Auth service at [auth.sbm.gg](https://auth.sbm.gg/).
 
 ## 🚀 Features
-- Discord OAuth2 authentication
-- MC Auth OAuth2 authentication
+- [Discord OAuth2](https://discord.com/developers/docs/topics/oauth2#oauth2) authentication
+- [MC-Auth OAuth2](https://github.com/Mc-Auth-com/Mc-Auth) authentication
 - JWT token generation and validation
 
 ## ⚒️ Installation
