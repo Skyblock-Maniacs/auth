@@ -22,6 +22,7 @@ It is built using Go, utilizing the [Gin](https://github.com/gin-gonic/gin) web 
     Create a `.env` file in the root directory with the following variables:
     ```env
     PORT=3000
+    JWT_SECRET=your_jwt_secret_key
 
     DISCORD_CLIENT_ID=your_discord_client_id
     DISCORD_CLIENT_SECRET=your_discord_client_secret
