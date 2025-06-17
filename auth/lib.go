@@ -14,8 +14,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
-
 var allowedDomains = []string{
 	"sbm.gg",
 }
@@ -68,11 +66,11 @@ func generateJWT(session SessionData) (string, error) {
 		"user_id":     session.UserID,
 		"username":    session.Username,
 		"avatar_hash": session.AvatarHash,
-		"exp":         time.Now().Add(SessionExpiresIn).Unix(),
+		"exp":         time.Now().Add(time.Duration(SessionExpiresIn) * time.Second).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
 func setEnvCookie(c *gin.Context, name, value string, maxAge int) {
