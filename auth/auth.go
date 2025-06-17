@@ -40,6 +40,8 @@ func Run(database *mongo.Client) {
 		discord.GET("/logout", DiscordLogoutHandler)
 	}
 
+	router.NoRoute(func(c *gin.Context) { c.JSON(404, gin.H{"message": "Unknown endpoint"}) })
+
 	logger.Info.Println("Auth Service routes initialized! Starting server on port: " + os.Getenv("PORT"))
 
 	router.Run()
