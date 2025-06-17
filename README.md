@@ -2,8 +2,13 @@
 Skyblock Maniacs Auth service is a custom authentication service for the Skyblock Maniacs Discord server and its related web services.
 It is built using Go, utilizing the [Gin](https://github.com/gin-gonic/gin) web framework for handling HTTP requests and responses.
 
+### Live Instance
+You can access the live instance of the Skyblock Maniacs Auth service at [auth.sbm.gg](https://auth.sbm.gg/).
+
 ## 🚀 Features
 - Discord OAuth2 authentication
+- MC Auth OAuth2 authentication
+- JWT token generation and validation
 
 ## ⚒️ Installation
 1. Clone the repository:
@@ -27,6 +32,10 @@ It is built using Go, utilizing the [Gin](https://github.com/gin-gonic/gin) web 
     DISCORD_CLIENT_ID=your_discord_client_id
     DISCORD_CLIENT_SECRET=your_discord_client_secret
     DISCORD_REDIRECT_URI=http://localhost:8080/callback
+
+    MCAUTH_CLIENT_ID=your_mc_auth_client_id
+    MCAUTH_CLIENT_SECRET=your_mc_auth_client_secret
+    MCAUTH_OAUTH_REDIRECT_URI=http://localhost:3000/minecraft/callback
 
     MONGO_URI=mongodb://localhost:27017/your_database_name
     ```
