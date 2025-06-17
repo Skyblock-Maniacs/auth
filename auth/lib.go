@@ -155,3 +155,7 @@ func getDiscordUserWithAccessToken(access string) (map[string]interface{}, error
 	}
 	return user, nil
 }
+
+func GetDatabaseRoles() {
+
+}
