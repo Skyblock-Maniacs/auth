@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -14,11 +15,14 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var router *gin.Engine
 var db *mongo.Client
+var redisClient *redis.Client
+var redisCtx context.Context
 
 func init() {
 	logger.Info.Println("Starting Auth Service...")
@@ -26,8 +30,10 @@ func init() {
 	router = gin.Default()
 }
 
-func Run(database *mongo.Client) {
+func Run(database *mongo.Client, redisClient *redis.Client, redisCtx context.Context) {
 	db = database
+	redisClient = redisClient
+	redisCtx = redisCtx
 	router.Use(cors.Default())
 	router.Use(gin.Recovery())
 
@@ -36,6 +42,11 @@ func Run(database *mongo.Client) {
 			"status": "ok",
 		})
 	})
+
+	me := router.Group("/@me")
+	{
+		me.GET("/permissions", MePermissionsHandler)
+	}
 
 	discord := router.Group("/discord")
 	{
@@ -57,6 +68,24 @@ func Run(database *mongo.Client) {
 	logger.Info.Println("Auth Service routes initialized! Starting server on port: " + os.Getenv("PORT"))
 
 	router.Run()
+}
+
+func MePermissionsHandler(c *gin.Context) {
+	sbm_jwt, err := c.Cookie("sbm_jwt")
+	if err != nil {
+		c.JSON(401, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	session, err := decodeJwt(sbm_jwt)
+	if err != nil {
+		c.JSON(401, gin.H{"error": "Invalid session"})
+		return
+	}
+	
+	c.JSON(200, gin.H{
+		"user_id":		 session.UserID,
+	})
 }
 
 func DiscordLoginHandler(c *gin.Context) {

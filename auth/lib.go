@@ -73,6 +73,26 @@ func generateJWT(session SessionData) (string, error) {
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
+func decodeJwt(tokenString string) (*SessionData, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JWT: %w", err)
+	}
+
+	if claims, ok := token.Claims.(*jwt.MapClaims); ok && token.Valid {
+		session := &SessionData{
+			UserID:     (*claims)["user_id"].(string),
+			Username:   (*claims)["username"].(string),
+			AvatarHash: (*claims)["avatar_hash"].(string),
+		}
+		return session, nil
+	}
+
+	return nil, fmt.Errorf("invalid JWT claims")
+}
+
 func setEnvCookie(c *gin.Context, name, value string, maxAge int) {
 	host := c.Request.Host
 
@@ -154,8 +174,4 @@ func getDiscordUserWithAccessToken(access string) (map[string]interface{}, error
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 	return user, nil
-}
-
-func GetDatabaseRoles() {
-	// logic
 }
