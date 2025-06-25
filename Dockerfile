@@ -11,6 +11,4 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /auth ./cmd/auth
 
-EXPOSE 6739
-
 ENTRYPOINT [ "/auth" ]
