@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Skyblock-Maniacs/auth/internal/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -106,7 +105,6 @@ func setEnvCookie(c *gin.Context, name, value string, maxAge int) {
 }
 
 func setDiscordCookies(form url.Values, c *gin.Context) (accessToken string, jwtToken string, err error) {
-	logger.Debug.Printf("Setting Discord cookies with form: %v", form)
 	req, err := http.NewRequest(http.MethodPost, DiscordAPIBaseURL+"/oauth2/token", strings.NewReader(form.Encode()))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create request for discord token: %w", err)

@@ -23,9 +23,9 @@ func main() {
 	}
 
 	redisClient, redisCtx, err := redisclient.Connect(&redisclient.RedisClientOptions{
-		Addr: os.Getenv("REDIS_HOST"),
-		Port: os.Getenv("REDIS_PORT"),
-		User: os.Getenv("REDIS_USER"),
+		Addr:     os.Getenv("REDIS_HOST"),
+		Port:     os.Getenv("REDIS_PORT"),
+		User:     os.Getenv("REDIS_USER"),
 		Password: os.Getenv("REDIS_PASSWORD"),
 	})
 	if err != nil {

@@ -7,16 +7,16 @@ import (
 )
 
 type RedisClientOptions struct {
-	Addr string
+	Addr     string
 	Password string
-	Port string
-	User string
+	Port     string
+	User     string
 }
 
 func Connect(opts *RedisClientOptions) (*redis.Client, context.Context, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     opts.Addr + ":" + opts.Port,
-		Password: opts.Password, 
+		Password: opts.Password,
 		Username: opts.User,
 		DB:       0,
 	})
