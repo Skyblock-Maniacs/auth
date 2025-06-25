@@ -10,7 +10,7 @@ func Connect(uri string, password string) (*redis.Client, context.Context, error
 	client := redis.NewClient(&redis.Options{
 		Addr:     uri,
 		Password: password, // leave empty if none
-		DB:       0,       // default DB
+		DB:       0,        // default DB
 	})
 
 	var ctx = context.Background()
