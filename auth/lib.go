@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Skyblock-Maniacs/auth/internal/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -73,6 +74,26 @@ func generateJWT(session SessionData) (string, error) {
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
+func decodeJwt(tokenString string) (*SessionData, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JWT: %w", err)
+	}
+
+	if claims, ok := token.Claims.(*jwt.MapClaims); ok && token.Valid {
+		session := &SessionData{
+			UserID:     (*claims)["user_id"].(string),
+			Username:   (*claims)["username"].(string),
+			AvatarHash: (*claims)["avatar_hash"].(string),
+		}
+		return session, nil
+	}
+
+	return nil, fmt.Errorf("invalid JWT claims")
+}
+
 func setEnvCookie(c *gin.Context, name, value string, maxAge int) {
 	host := c.Request.Host
 
@@ -84,21 +105,22 @@ func setEnvCookie(c *gin.Context, name, value string, maxAge int) {
 	c.SetCookie(name, value, maxAge, "/", ".sbm.gg", true, true)
 }
 
-func setDiscordCookies(form url.Values, c *gin.Context) error {
-	req, err := http.NewRequest(http.MethodPost, "https://discord.com/api/v10/oauth2/token", strings.NewReader(form.Encode()))
+func setDiscordCookies(form url.Values, c *gin.Context) (accessToken string, jwtToken string, err error) {
+	logger.Debug.Printf("Setting Discord cookies with form: %v", form)
+	req, err := http.NewRequest(http.MethodPost, DiscordAPIBaseURL+"/oauth2/token", strings.NewReader(form.Encode()))
 	if err != nil {
-		return fmt.Errorf("failed to create request for discord token: %w", err)
+		return "", "", fmt.Errorf("failed to create request for discord token: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to get discord token: %w", err)
+		return "", "", fmt.Errorf("failed to get discord token: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("discord token request failed with status: %s", resp.Status)
+		return "", "", fmt.Errorf("discord token request failed with status: %s", resp.Status)
 	}
 
 	var tokenResponse struct {
@@ -110,12 +132,12 @@ func setDiscordCookies(form url.Values, c *gin.Context) error {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
-		return fmt.Errorf("failed to decode discord token response: %w", err)
+		return "", "", fmt.Errorf("failed to decode discord token response: %w", err)
 	}
 
 	user, err := getDiscordUserWithAccessToken(tokenResponse.AccessToken)
 	if err != nil {
-		return fmt.Errorf("failed to get discord user info: %w", err)
+		return "", "", fmt.Errorf("failed to get discord user info: %w", err)
 	}
 
 	session := SessionData{
@@ -124,19 +146,19 @@ func setDiscordCookies(form url.Values, c *gin.Context) error {
 		AvatarHash: user["avatar"].(string),
 	}
 
-	jwtToken, err := generateJWT(session)
+	jwtToken, err = generateJWT(session)
 	if err != nil {
-		return fmt.Errorf("failed to generate JWT: %w", err)
+		return "", "", fmt.Errorf("failed to generate JWT: %w", err)
 	}
 
 	setEnvCookie(c, "sbm_jwt", jwtToken, SessionExpiresIn)
 	setEnvCookie(c, "discord_access_token", tokenResponse.AccessToken, DiscordTokenExpiresIn)
 	setEnvCookie(c, "discord_refresh_token", tokenResponse.RefreshToken, DiscordRefreshTokenExpiresIn)
-	return nil
+	return tokenResponse.AccessToken, jwtToken, nil
 }
 
 func getDiscordUserWithAccessToken(access string) (map[string]interface{}, error) {
-	req, err := http.NewRequest(http.MethodGet, "https://discord.com/api/v10/users/@me", nil)
+	req, err := http.NewRequest(http.MethodGet, DiscordAPIBaseURL+"/users/@me", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -154,4 +176,34 @@ func getDiscordUserWithAccessToken(access string) (map[string]interface{}, error
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 	return user, nil
+}
+
+func getDiscordUserSbmGuildRoles(access string) ([]string, error) {
+	url := fmt.Sprintf("%s/users/@me/guilds/%s/member", DiscordAPIBaseURL, os.Getenv("DISCORD_GUILD_ID"))
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+access)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user roles: %s", resp.Status)
+	}
+	var member map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&member); err != nil {
+		return nil, fmt.Errorf("failed to decode member info: %w", err)
+	}
+	roles, ok := member["roles"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("roles not found in member info")
+	}
+	roleStrings := make([]string, len(roles))
+	for i, role := range roles {
+		roleStrings[i] = role.(string)
+	}
+	return roleStrings, nil
 }
