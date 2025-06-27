@@ -26,9 +26,9 @@ var allowedLocalhosts = map[string]bool{
 }
 
 const (
-	DiscordTokenExpiresIn        = 60 * 60           // 1 hour
-	DiscordRefreshTokenExpiresIn = 60 * 60 * 24 * 30 // 30 days
-	SessionExpiresIn             = 60 * 60 * 24      // 1 day
+	DiscordTokenExpiresIn        = 60 * 60 * 24 * 7          // 7 days
+	DiscordRefreshTokenExpiresIn = 60 * 60 * 24 * 7          // 7 days
+	SessionExpiresIn             = 60 * 60 * 24 * 7          // 7 days
 )
 
 type SessionData struct {
