@@ -22,7 +22,12 @@ func main() {
 		logger.Info.Println("Connected to MongoDB successfully")
 	}
 
-	redisClient, redisCtx, err := redisclient.Connect(os.Getenv("REDIS_URI"), os.Getenv("REDIS_PASSWORD"))
+	redisClient, redisCtx, err := redisclient.Connect(&redisclient.RedisClientOptions{
+		Addr:     os.Getenv("REDIS_HOST"),
+		Port:     os.Getenv("REDIS_PORT"),
+		User:     os.Getenv("REDIS_USER"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+	})
 	if err != nil {
 		logger.Error.Fatal("Failed to connect to Redis: ", err)
 	} else {

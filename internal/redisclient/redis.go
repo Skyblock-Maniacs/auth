@@ -6,11 +6,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Connect(uri string, password string) (*redis.Client, context.Context, error) {
+type RedisClientOptions struct {
+	Addr     string
+	Password string
+	Port     string
+	User     string
+}
+
+func Connect(opts *RedisClientOptions) (*redis.Client, context.Context, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     uri,
-		Password: password, // leave empty if none
-		DB:       0,        // default DB
+		Addr:     opts.Addr + ":" + opts.Port,
+		Password: opts.Password,
+		Username: opts.User,
+		DB:       0,
 	})
 
 	var ctx = context.Background()
